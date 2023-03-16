@@ -8,6 +8,7 @@ from scipy.fft import fft
 from scipy.signal import butter, sosfilt, windows
 import torch
 from torch.utils.data import Dataset
+from train_2023_label_map import train_label_map_23
 device = torch.device("mps")
 
 
@@ -64,7 +65,7 @@ class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
 
         waveform = torch.tensor(gaussian_wave, device=device).unsqueeze(0)
 
-        return waveform, filename, common_name
+        return waveform, train_label_map_23[primary_label]
 
 
 class LSTMBirdCallDatasetSpectrogram(LSTMBirdCallDataset):
@@ -104,7 +105,7 @@ class LSTMBirdCallDatasetSpectrogram(LSTMBirdCallDataset):
         spect, _, _ = spectrogram(gaussian_wave, sample_rate_hz)
         spect = torch.tensor(spect, device=device)
 
-        return spect, filename, common_name
+        return spect, filename, train_label_map_23[primary_label]
 
 
 def spectrogram(signal, sample_rate_hz, frame_overlap=0.5, frame_duration_ms=20, hann_weighting=False):
