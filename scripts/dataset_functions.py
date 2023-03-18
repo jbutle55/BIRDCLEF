@@ -14,7 +14,23 @@ from scripts.utils import check_device
 device = check_device()
 
 
-def spectrogram(signal, sample_rate_hz, frame_overlap=0.5, frame_duration_ms=20, hann_weighting=False):
+def spectrogram(signal, sample_rate_hz: int, frame_overlap: float = 0.5, frame_duration_ms: float = 20.0, hann_weighting: bool = False):
+    """
+    A function to compute a spectrogram from an input signal.
+    The spectrogram is computed by calculating individual FFTs in a sliding window fashion across the input signal.
+    A spectrogram is a 2-d array of frequency components at increasing time steps with the magnitude of each frequency
+    component at time t represented by the points value.
+
+    Args:
+        signal: The input signal used to compute the spectrogram.
+        sample_rate_hz: The sample rate of the input signal in Hz.
+        frame_overlap: The amount of overlap between FFT windows. Must be between 0 and 1.
+        frame_duration_ms: The individual FFT frame duration in milliseconds.
+        hann_weighting: Boolean whether to app;y Hann weighting. Defaults to False.
+
+    Returns: A tuple containing: (the spectrogram with shape [Freq, Time], the sample rate of the signal in Hz, the computed width of a single FFT window)
+
+    """
     if not 0 <= frame_overlap <= 1.0:
         raise ValueError("Frame overlap should be between 0 and 1")
 
@@ -42,13 +58,25 @@ def spectrogram(signal, sample_rate_hz, frame_overlap=0.5, frame_duration_ms=20,
 
     # Apply FFT to all windows at once
     fft_windows = fft(strided_windows)
-    fft_windows_abs = 2.0 / frame_size * np.abs(fft_windows[:, :frame_size // 2]).T
+    fft_windows_abs = 2.0 / frame_size * np.abs(fft_windows[:, :frame_size // 2]).T  # Has shape [Freq, Time]
     dynamic_spectrogram = (10 * np.log10(fft_windows_abs))  # Increase dynamic range
 
     return dynamic_spectrogram, sample_rate_hz, single_window_size
 
 
 def mel_spectrogram(spectrogram, sample_rate_hz, num_mel_filters=40, low_freq_hz=0, high_freq_hz=None):
+    """
+
+    Args:
+        spectrogram:
+        sample_rate_hz:
+        num_mel_filters:
+        low_freq_hz:
+        high_freq_hz:
+
+    Returns:
+
+    """
     norm_filter_bank, filter_bank = mel_filter(num_freq_components=num_mel_filters,
                                                num_windows=spectrogram.shape[1],
                                                samplerate=sample_rate_hz,
@@ -62,6 +90,18 @@ def mel_spectrogram(spectrogram, sample_rate_hz, num_mel_filters=40, low_freq_hz
 
 
 def mel_filter(num_windows, num_freq_components, samplerate=16000, low_freq=0, high_freq=None):
+    """
+
+    Args:
+        num_windows:
+        num_freq_components:
+        samplerate:
+        low_freq:
+        high_freq:
+
+    Returns:
+
+    """
     high_freq = high_freq if (high_freq and high_freq < samplerate / 2) else (samplerate / 2)
     min_mel = hz2mel(low_freq)
     max_mel = hz2mel(high_freq)
@@ -90,14 +130,41 @@ def mel_filter(num_windows, num_freq_components, samplerate=16000, low_freq=0, h
 
 
 def hz2mel(freq_hz):
+    """
+        Function to calculate a mel from Hz.
+        Args:
+            freq_hz: The input frequency value in Hz to be converted to mel.
+
+        Returns: The converted mel frequency.
+
+        """
     return 2595 * np.log10(1 + (freq_hz / 700))
 
 
 def mel2hz(mel):
+    """
+    Function to calculate a frequency in Hz from mel.
+    Args:
+        mel: The input mel value to be converted to Hz.
+
+    Returns: The converted frequency in Hz.
+
+    """
     return 700 * (np.power(10, mel / 2595) - 1)
 
 
-def display_spectrogram(spec, sample_rate_hz, window_size, title_addon=None):
+def display_spectrogram(spec, sample_rate_hz: int, window_size: int, title_addon: str = None):
+    """
+    A function to plot a spectrogram. Can be used in conjunction with the spectrogram function in the manner:
+    display_spectrogram(*spectrogram(signal, sample_rate_hz), title_addon='')
+
+    Args:
+        spec: The spectrogram with shape [Freq, Time].
+        sample_rate_hz: The sample rate of the signal used to compute the spectrogram in Hz.
+        window_size: The width of a single window used to compute the spectrogram.
+        title_addon: Additional string to append to the spectrogram title during plotting.
+
+    """
     plt.imshow(spec, aspect="auto", origin="lower")
     if title_addon:
         spec_title = f'Spectrogram - {title_addon}'
@@ -114,22 +181,44 @@ def display_spectrogram(spec, sample_rate_hz, window_size, title_addon=None):
     plt.ylabel("Frequency (Hz)")
     plt.show()
 
-    return
 
+def apply_bandpass(signal: np.ndarray, sample_rate_hz: int, lower_freq_hz: int = 0, upper_freq_hz: int = 500000) -> np.ndarray:
+    """
+    A function to apply a bandpass filter to an input signal.
+    The upper frequency limit cannot exceed half the sampling rate (Nyquist Limit).
 
-def apply_bandpass(signal, sample_rate, lower_freq_hz=0, upper_freq_hz=500000):
+    Args:
+        signal: The input signal to be filtered.
+        sample_rate_hz: The sample rate of the input signal in Hz.
+        lower_freq_hz: The lower frequency limit of the bandpass. All freq. below the limit will be removed.
+        upper_freq_hz: The upper frequency limit of the bandpass. All freq. above the limit will be removed.
+
+    Returns: The filtered signal in the form of a numpy array.
+
+    """
     # Upper freq. limit must meet Nyquist freq.
-    if upper_freq_hz >= (sample_rate/2):
+    if upper_freq_hz >= (sample_rate_hz/2):
         logging.info('Setting upper limit of bandpass filter to Fs/2.')
-        upper_freq_hz = sample_rate/2 - 1
+        upper_freq_hz = sample_rate_hz/2 - 1
 
-    sos_bandpass = butter(N=10, Wn=[lower_freq_hz, upper_freq_hz], btype='band', fs=sample_rate, output='sos')
+    sos_bandpass = butter(N=10, Wn=[lower_freq_hz, upper_freq_hz], btype='band', fs=sample_rate_hz, output='sos')
     banded_signal = sosfilt(sos_bandpass, signal)
 
     return banded_signal
 
 
 def frame_audio(signal: np.ndarray, sample_rate_hz: float, frame_duration_seconds: float = 5.0) -> np.ndarray:
+    """
+    Function to split an audio signal into a numpy array of short clips.
+
+    Args:
+        signal: The input signal to be split.
+        sample_rate_hz: The sample rate of the input signal in Hz.
+        frame_duration_seconds: The duration of each framed clip in seconds.
+
+    Returns: A numpy array of framed clips of the input signal with each clip having a duration of frame_duration_seconds.
+
+    """
     num_segs_per_frame = int(np.floor(frame_duration_seconds * (signal.size / sample_rate_hz)))
     windowed_signal = np.lib.stride_tricks.sliding_window_view(signal, num_segs_per_frame)
     framed_audio = windowed_signal[::num_segs_per_frame]
@@ -137,18 +226,31 @@ def frame_audio(signal: np.ndarray, sample_rate_hz: float, frame_duration_second
     return framed_audio
 
 
-def apply_gaussian_noise(signal: np.ndarray):
+def apply_gaussian_noise(signal: np.ndarray) -> np.ndarray:
+    """
+    A function to apply random Gaussian noise to a signal.
+
+    Args:
+        signal: The input signal to have Gaussian noise applied.
+
+    Returns: The output signal with Gaussian noise overlaid on the input audio signal.
+
+    """
     gauss_noise = np.random.randn(*signal.shape).astype(np.float32)
     signal = signal + gauss_noise
     return signal
 
 
-def add_background_birds(signal: np.ndarray):
+def add_background_birds(signal: np.ndarray) -> np.ndarray:
     """
     Useful function for fine-tuning a trained model. Adding low volume and clipped random birdcalls as background
     noise might assist the model with detecting correct calls during inference.
-    :param signal:
-    :return:
+
+    Args:
+        signal:
+
+    Returns:
+
     """
     # TODO Create function
 

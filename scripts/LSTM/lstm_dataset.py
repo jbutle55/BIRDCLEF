@@ -42,6 +42,9 @@ class LSTMBirdCallDataset(Dataset):
 
 
 class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
+    """
+    Bird call Dataset class for the LSTM model trained using audio waveforms.
+    """
     def __getitem__(self, idx):
         if not self.eval_mode:
             row = self.df.iloc[idx]
@@ -75,6 +78,9 @@ class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
 
 
 class LSTMBirdCallDatasetSpectrogram(LSTMBirdCallDataset):
+    """
+    Bird call Dataset class for the LSTM model trained using spectrograms from audio waveforms.
+    """
     def __getitem__(self, idx):
         if not self.eval_mode:
             row = self.df.iloc[idx]
