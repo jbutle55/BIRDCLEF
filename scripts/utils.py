@@ -9,6 +9,12 @@ import logging
 
 
 def check_device():
+    """
+    A utility function to determine GPU/CPU device type based on individual computer hardware.
+
+    Returns: The pytorch device to be used during runtime.
+
+    """
     # For MacOSX M1 GPU
     if torch.backends.mps.is_available() and torch.backends.mps.is_built():
         # this ensures that the current MacOS version is at least 12.3+
