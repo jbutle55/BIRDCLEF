@@ -60,7 +60,7 @@ class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
         wav, sample_rate_hz = librosa.load(audio_path, sr=self.sample_rate_hz, duration=self.audio_duration_seconds)
 
         # Apply bandpass and other transforms
-        banded_wave = apply_bandpass(signal=wav, sample_rate=sample_rate_hz, lower_freq_hz=150, upper_freq_hz=15000)
+        banded_wave = apply_bandpass(signal=wav, sample_rate_hz=sample_rate_hz, lower_freq_hz=150, upper_freq_hz=15000)
         banded_wave = np.float32(banded_wave)
 
         # Apply Gaussian noise
@@ -96,7 +96,7 @@ class LSTMBirdCallDatasetSpectrogram(LSTMBirdCallDataset):
         wav, sample_rate_hz = librosa.load(audio_path, sr=self.sample_rate_hz, duration=self.audio_duration_seconds)
 
         # Apply bandpass and other transforms
-        banded_wave = apply_bandpass(signal=wav, sample_rate=sample_rate_hz, lower_freq_hz=150, upper_freq_hz=15000)
+        banded_wave = apply_bandpass(signal=wav, sample_rate_hz=sample_rate_hz, lower_freq_hz=150, upper_freq_hz=15000)
         banded_wave = np.float32(banded_wave)
 
         # Apply Gaussian noise
