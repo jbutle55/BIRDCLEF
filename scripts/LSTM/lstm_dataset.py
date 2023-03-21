@@ -60,8 +60,6 @@ class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
 
         # All samples in a batch need to be an identical size, therefore use fixes sample rate and duration
         wav, sample_rate_hz = librosa.load(audio_path, sr=self.sample_rate_hz, duration=self.audio_duration_seconds)
-        print(wav.shape)
-        print(f'sr: {sample_rate_hz}')
 
         # Apply bandpass and other transforms
         banded_wave = apply_bandpass(signal=wav, sample_rate_hz=sample_rate_hz, lower_freq_hz=150, upper_freq_hz=15000)
