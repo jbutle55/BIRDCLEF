@@ -13,7 +13,7 @@ import logging
 import torch
 from torch.utils.data import Dataset
 from scripts.train_2023_label_map import train_label_map_23
-from scripts.dataset_functions import apply_bandpass, apply_gaussian_noise, frame_audio, spectrogram
+from scripts.dataset_functions import apply_bandpass, apply_gaussian_noise, frame_audio, spectrogram, pad_audio_seconds
 from scripts.utils import check_device
 device = check_device()
 
@@ -22,7 +22,8 @@ class LSTMBirdCallDataset(Dataset):
     """
     Base bird call audio dataset.
     """
-    def __init__(self, dataset_dir: str, data_year='2023', eval_mode: bool = False, train_audio_duration=2.0, sample_rate_hz=48000, gaussian_aug: bool = False):
+    def __init__(self, dataset_dir: str, data_year='2023', eval_mode: bool = False, train_audio_duration=5.0,
+                 sample_rate_hz=48000, gaussian_aug: bool = False):
         self.dataset_csv = dataset_dir
         self.audio_loc = f'data/birdclef-{data_year}/train_audio'
         self.eval_mode = eval_mode
@@ -35,6 +36,7 @@ class LSTMBirdCallDataset(Dataset):
         self.sample_rate_hz = sample_rate_hz
         self.gaussian_augmentation = gaussian_aug
         self.rng = np.random.default_rng()
+        self.minimum_duration_frames = int(train_audio_duration * sample_rate_hz)
 
     def __getitem__(self, item):
         return
@@ -68,6 +70,10 @@ class LSTMBirdCallDatasetWaveform(LSTMBirdCallDataset):
         # Apply Gaussian noise
         if self.gaussian_augmentation:
             banded_wave = apply_gaussian_noise(banded_wave)
+
+        if banded_wave.size < self.minimum_duration_frames:
+            banded_wave = pad_audio_seconds(banded_wave, self.minimum_duration_frames - banded_wave.size,
+                                            sample_rate_hz=sample_rate_hz)
 
         # Split waveform into 5-second segments for inference
         framed_waveforms = frame_audio(signal=banded_wave, sample_rate_hz=sample_rate_hz, frame_duration_seconds=5.0)
@@ -113,6 +119,10 @@ class LSTMBirdCallDatasetSpectrogram(LSTMBirdCallDataset):
         # Apply Gaussian noise
         if self.gaussian_augmentation:
             banded_wave = apply_gaussian_noise(banded_wave)
+
+        if banded_wave.size < self.minimum_duration_frames:
+            banded_wave = pad_audio_seconds(banded_wave, self.minimum_duration_frames - banded_wave.size,
+                                            sample_rate_hz=sample_rate_hz)
 
         # Split waveform into 5-second segments for inference
         framed_waveforms = frame_audio(signal=banded_wave, sample_rate_hz=sample_rate_hz, frame_duration_seconds=5.0)
