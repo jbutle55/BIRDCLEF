@@ -221,6 +221,11 @@ def frame_audio(signal: np.ndarray, sample_rate_hz: float, frame_duration_second
     Returns: A numpy array of framed clips of the input signal with each clip having a duration of frame_duration_seconds.
 
     """
+    assert signal.size >= int(frame_duration_seconds * sample_rate_hz), \
+        f'Signal of size {signal.size} must be longer than minimum length ' \
+        f'{int(frame_duration_seconds * sample_rate_hz)}. Consider using the function pad_audio_seconds() to ' \
+        f'increase signal length.'
+
     num_segments_per_frame = int(np.floor(frame_duration_seconds * sample_rate_hz))
     windowed_signal = np.lib.stride_tricks.sliding_window_view(signal, num_segments_per_frame)
     framed_audio = windowed_signal[::num_segments_per_frame]
@@ -257,4 +262,26 @@ def add_background_birds(signal: np.ndarray) -> np.ndarray:
     # TODO Create function
 
     return signal
+
+
+def pad_audio_seconds(signal: np.ndarray, pad_duration_seconds: float, sample_rate_hz) -> np.ndarray:
+    """
+    A function to zero-pad an audio waveform for a desired duration in seconds. The zeros are padded to the end of the
+    signal.
+
+    Args:
+        signal: The signal to be padded.
+        pad_duration_seconds: The duration of padded audio in seconds.
+        sample_rate_hz: The sampling rate of the signal to be padded.
+
+    Returns: The zero-padded signal.
+
+    """
+    # Using ceil ensures the audio is padded by ATLEAST the desired duration in seconds
+    frames_to_add = int(np.ceil(pad_duration_seconds * sample_rate_hz))
+    padding = np.zeros(frames_to_add)
+    padded_signal = np.concatenate(signal, padding, axis=0)
+    print(padded_signal.shape)
+    return padded_signal
+
 
