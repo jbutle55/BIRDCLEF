@@ -14,7 +14,7 @@ from scripts.utils import check_device
 device = check_device()
 
 
-def spectrogram(signal, sample_rate_hz: int, frame_overlap: float = 0.5, frame_duration_ms: float = 20.0, hann_weighting: bool = False):
+def spectrogram(signal, sample_rate_hz, frame_overlap: float = 0.5, frame_duration_ms: float = 20.0, hann_weighting: bool = False):
     """
     A function to compute a spectrogram from an input signal.
     The spectrogram is computed by calculating individual FFTs in a sliding window fashion across the input signal.
@@ -182,9 +182,11 @@ def display_spectrogram(spec, sample_rate_hz: int, window_size: int, title_addon
     plt.show()
 
 
-def apply_bandpass(signal: np.ndarray, sample_rate_hz: int, lower_freq_hz: int = 0, upper_freq_hz: int = 500000) -> np.ndarray:
+def apply_bandpass(signal: np.ndarray, sample_rate_hz, lower_freq_hz: int = 0, upper_freq_hz: int = 500000) -> np.ndarray:
     """
     A function to apply a bandpass filter to an input signal.
+    The function can technically be used as both a low-pass and high-pass filter by setting the upper freq. limit to a
+    sufficiently high number or the lower freq. limit to 0 Hz respectively.
     The upper frequency limit cannot exceed half the sampling rate (Nyquist Limit).
 
     Args:
@@ -219,9 +221,9 @@ def frame_audio(signal: np.ndarray, sample_rate_hz: float, frame_duration_second
     Returns: A numpy array of framed clips of the input signal with each clip having a duration of frame_duration_seconds.
 
     """
-    num_segs_per_frame = int(np.floor(frame_duration_seconds * (signal.size / sample_rate_hz)))
-    windowed_signal = np.lib.stride_tricks.sliding_window_view(signal, num_segs_per_frame)
-    framed_audio = windowed_signal[::num_segs_per_frame]
+    num_segments_per_frame = int(np.floor(frame_duration_seconds * sample_rate_hz))
+    windowed_signal = np.lib.stride_tricks.sliding_window_view(signal, num_segments_per_frame)
+    framed_audio = windowed_signal[::num_segments_per_frame]
 
     return framed_audio
 
